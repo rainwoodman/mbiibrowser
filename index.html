@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Universe</title>
+   <style type="text/css">
+      body {
+         margin: 0;
+         padding: 0;
+         font-family: Verdana, Helvetica, Arial, sans-serif;
+      }
+
+      .overlayPanel {
+         display: none;
+         position: absolute;
+         border: 1px solid black;
+         padding: 3px;
+         background-color: rgba(255, 255, 255, .3);
+         margin: 4px;
+         color: black;
+         z-index: 1000;
+      }
+
+      #controlPanel {
+         display: inline;
+         top: 5px;
+         right: 5px;
+         width: auto;
+         height: auto;
+      }
+
+      #interestPointInfo {
+         top: 5px;
+         left: 5px;
+         width: 450px;
+         height: auto;
+      }
+
+      #gigapanViewer {
+         position: absolute;
+         top: 0;
+         bottom: 0;
+         left: 0;
+         right: 0;
+         margin: 0;
+         padding: 0;
+         background-color: black;
+      }
+
+      .SubHalo {
+         cursor: pointer;
+         width: 24px;
+         height: 24px;
+         background: url('images/interest_point.png') no-repeat;
+      }
+
+      .SubHaloActive {
+         background: url('images/interest_point_active.png') no-repeat;
+      }
+
+      .BrightGalaxy {
+         cursor: pointer;
+         width: 24px;
+         height: 24px;
+         background: url('images/bright_galaxy.png') no-repeat;
+      }
+
+      .BrightGalaxyActive {
+         cursor: pointer;
+         width: 24px;
+         height: 24px;
+         background: url('images/bright_galaxy_active.png') no-repeat;
+      }
+
+
+      #interestPointTitle {
+         font-size: 16pt;
+         font-weight: bold;
+      }
+
+      #interestPointDescription {
+         font-size: 12pt;
+      }
+
+      #interestPointOverlayCloseButton {
+         font-weight: bold;
+         width: 15px;
+         height: 15px;
+         line-height: 15px;
+         text-align: center;
+         border: 1px solid black;
+         float: right;
+         cursor: pointer;
+      }
+   </style>
+   <script language="JavaScript" type="text/javascript" src="lib/jquery/jquery-1.10.2.min.js"></script>
+   <script language="JavaScript" type="text/javascript" src="lib/seadragon/seadragon-min.js"></script>
+   <script language="JavaScript" type="text/javascript" src="lib/org/gigapan/seadragon/GigapanTileSource.js"></script>
+   <script language="JavaScript" type="text/javascript" src="lib/org/gigapan/seadragon/SeadragonUtils.js"></script>
+   <script language="JavaScript" type="text/javascript">
+      var gigapans = [
+         {
+            id : 116680,
+            width : 214087,
+            height : 122474,
+            title : "Gas",
+            viewer : null,
+            elmt : null
+         },
+         {
+            id : 145632,
+            width : 214087,
+            height : 122474,
+            title : "Stellar",
+            viewer : null,
+            elmt : null
+         }
+      ];
+
+      var overlays = [
+          {
+            source: "galaxies.json",
+	    interestPoints: [],
+            pointStyle: "BrightGalaxy",
+          },
+          {
+            source: "halos.json",
+	    interestPoints: [],
+            pointStyle: "SubHalo",
+          }
+      ];
+      var currentlySelectedOverlay = null;
+      var currentlySelectedInterestPointId = null;
+      var currentlySelectedGigapan = null;
+      var currentBounds = null;
+      var overlayOn = true;
+
+      $(document).ready(function() {
+
+         $("#overlaySwitch").click(function() {
+            if (overlayOn) {
+                overlayOn = false;
+                $("[id|='interestPoint']").hide();
+                $("#overlaySwitch").text("Overlay On");
+            } else {
+                $("[id|='interestPoint']").show();
+                overlayOn = true;
+                $("#overlaySwitch").text("Overlay Off");
+            }
+         });
+         $("#aboutButton").click(function() {
+            displayAbout();
+         });
+
+         // max number of concurrent image downloads
+         Seadragon.Config.imageLoaderLimit = 6;
+
+         Seadragon.Config.autoHideControls = false;
+         Seadragon.Config.imagePath = "lib/seadragon/img/";
+
+         for(i = 0; i < gigapans.length; i++) {
+             $("#overlaySwitch").after(createGigapanButton(i));
+            createViewer(i);
+         }
+
+         $("#interestPointOverlayCloseButton").click(function() {
+            deselectInterestPoint();
+         });
+
+         for(i = 0; i < overlays.length; i++) {
+             loadInterestPoints(overlays[i]['source'], i);
+         }
+         window.setTimeout(function() {
+             displayAbout();
+            });
+      });
+      function displayAbout() {
+             $("#interestPointTitle").html("What's this?");
+             $("#interestPointDescription").html($("#about").html());
+             $("#interestPointInfo").show();
+      }
+      function createViewer(gigapanid) {
+         // create and initialize the viewer
+         element = $('<div id="gigapanViewer' + gigapanid + '"></div>"');
+         $("#gigapanViewer").append(element);
+         var viewer = new Seadragon.Viewer("gigapanViewer" + gigapanid);
+         viewer.setDashboardEnabled(true);
+         viewer.addEventListener("open", function() {
+            console.log("open" + gigapanid); 
+            setViewerSize(gigapanid); 
+            updateOverlays(gigapanid);
+            if(gigapanid != 0) {
+                console.log('setting display');
+                element.css('display', 'none');
+            } 
+            currentlySelectedGigapan = 0;
+         });
+
+         setViewerSize(gigapanid);
+         var gigapan = gigapans[gigapanid];
+         gigapan['viewer'] = viewer;
+         gigapan['elmt'] = element;
+         console.log("Loading gigapan " + gigapan['id']);
+
+         window.setTimeout(function() {
+            // compute the index of the tile server for this gigapan (note: this may change in the future, perhaps without warning!)
+            var tileServerIndex = '' + Math.floor(gigapan.id / 1000);
+            if (tileServerIndex.length < 2) {
+               tileServerIndex = '0' + tileServerIndex;
+            }
+
+            var urlPrefix = "http://tile" + tileServerIndex + ".gigapan.org/gigapans0/" + gigapan.id + "/tiles";
+
+            // create the tile source
+            var gigapanSource = new org.gigapan.seadragon.GigapanTileSource(
+                  urlPrefix,
+                  gigapan.width,
+                  gigapan.height
+            );
+
+            // tell the viewer to open the tile source
+            viewer.openTileSource(gigapanSource);
+         }, 1);
+      }
+      function createGigapanButton(gigapanid) {
+         var gigapan = gigapans[gigapanid];
+         var element = $('<button id="switchTo' + gigapan['title'] + '" >'
+                         + 'Switch to ' + gigapan['title'] + '</button>');
+         element.click( function () {
+            var viewer = gigapans[currentlySelectedGigapan]['viewer'];
+            if (viewer && viewer.viewport && viewer.isOpen()) {
+               // remember the current bounds
+               currentBounds = viewer.viewport.getBounds();
+               // swap in the next gigapan
+               for(i = 0; i < gigapans.length; i++)  {
+                   gigapans[i]['elmt'].css('display', 'none');
+               }
+            }
+            console.log("show" + gigapanid);
+            viewer = gigapan['viewer'];
+            if (currentBounds) {
+                viewer.viewport.fitBounds(currentBounds, true);
+            }
+            currentlySelectedGigapan = gigapanid;
+            window.setTimeout(function() {
+                gigapans[gigapanid]['elmt'].css('display', 'block');
+            });
+        });
+        return element;
+      }
+
+      function loadInterestPoints(jsonurl, gigapanid) {
+         $.ajax({
+                dataType: "json",
+                url: jsonurl, 
+                mimeType: "application/json"})
+        .done(
+             function(data) {
+                 overlays[gigapanid]["interestPoints"] = data;
+                 for(i = 0; i < gigapans.length; i++) {
+                     updateOverlays(i);
+                 }
+            }
+         )
+         .always(
+             function(data, status, junk) {
+           console.log(jsonurl + "," + gigapanid + status);
+            }
+          );
+           console.log(jsonurl + "," + gigapanid);
+      }
+
+      function setViewerSize(i) {
+         console.log(i + 'set size');
+         $("#gigapanViewer" + i).height($(window).height());
+      }
+
+      function updateOverlays(i) {
+        var viewer = gigapans[i]['viewer'];
+        if (! (viewer && viewer.drawer && viewer.isOpen())) return;
+        
+        viewer.drawer.clearOverlays();
+        if (!overlayOn) return;
+        for(i = 0; i < overlays.length; i ++) {
+         var overlay = overlays[i];
+         if (overlay['interestPoints']) {
+            $.each(overlay['interestPoints'], function(index, over) {
+               var overlayElement = createInterestPointElement(i, index);
+               var center = new Seadragon.Point(over.center.x, over.center.y);
+               viewer.drawer.addOverlay(overlayElement.get(0), center, Seadragon.OverlayPlacement.CENTER);
+            });
+         }
+        }
+      }
+
+      function createInterestPointElement(i, id) {
+         var overlay = overlays[i];
+         var pointStyle = overlay["pointStyle"];
+         var overlayElement = $('<div id="interestPoint-' + i + '.' 
+                   + id + '" class="' + pointStyle + '"></div>');
+         overlayElement
+               .mouseenter(function() {
+                              $(this).addClass(pointStyle + "Active");
+                           })
+               .mouseleave(function() {
+                              if (i != currentlySelectedOverlay || id != currentlySelectedInterestPointId) {
+                                 $(this).removeClass(pointStyle + "Active");
+                              }
+                           })
+               .click(function() {
+                         selectInterestPoint(i, id);
+                      })
+         return overlayElement;
+      }
+
+      function selectInterestPoint(i, id) {
+         if (i != currentlySelectedOverlay || id != currentlySelectedInterestPointId) {
+            deselectInterestPoint();
+         }
+         currentlySelectedOverlay = i;
+         currentlySelectedInterestPointId = id;
+         displayInterestPointContent(i, id);
+         zoomTo(overlays[i]['interestPoints'][id]['bounds']);
+      }
+
+      function displayInterestPointContent(i, id) {
+         var content = overlays[i]['interestPoints'][id]['content'];
+         $("#interestPointTitle").html(content['title']);
+         $("#interestPointDescription").html(content['description']);
+         $("#interestPointInfo").show();
+      }
+
+      function deselectInterestPoint() {
+         $("#interestPointInfo").hide();
+         if(currentlySelectedOverlay == null) return;
+         if(currentlySelectedInterestPointId == null) return;
+         var overlay = overlays[currentlySelectedOverlay];
+         var pointStyle = overlay["pointStyle"];
+         $("#interestPoint" + currentlySelectedOverlay + '#' + 
+                currentlySelectedInterestPointId).removeClass(pointStyle + "Active");
+         currentlySelectedInterestPointId = null;
+         currentlySelectedOverlay = null;
+      }
+
+      function zoomTo(bounds) {
+         var viewer = gigapans[currentlySelectedGigapan]['viewer'];
+         viewer.viewport.fitBounds(new Seadragon.Rect(bounds.x, bounds.y, bounds.width, bounds.height));
+      }
+
+      $(window).resize(function() {
+         for(i = 0; i < gigapans.length; i++) 
+             setViewerSize(i);
+      });
+
+   </script>
+</head>
+<body>
+<div id="interestPointInfo" class="overlayPanel">
+   <div id="interestPointOverlayCloseButton">X</div>
+   <div id="interestPointTitle"></div>
+   <div id="interestPointDescription"></div>
+</div>
+<div id="controlPanel" class="overlayPanel">
+   <button id="aboutButton">What's this?</button>
+   <button id="overlaySwitch">Overlay Off</button>
+</div>
+<div id="gigapanViewer"></div>
+<div id="about" style="display:none">
+<div style="font-size:10pt;">
+<p>
+    This is an interactive viewer of the cosmological simulation 
+    MassiveBlack II (Khandai et al. 2013 in prep.).
+    The hydrodynamical simulation uses 2 times 5 billion particles
+    (half gas, half dark matter) to track the motion of baryons, 
+    dark matter in a 100 Mpc/h (about half billion light years) box,
+    since not far from the Big Bang to today. The best tool to
+    visualize simulation of such scale is Gigapan.
+</p>  
+<p>
+    Shown here is the density of gas (Gas Layer) and the galaxies
+    (Stellar Layer). The density of gas is color coded by its
+    temperature: Red corresponds to 100 million Kelvin, and blue
+    corresponds to 10000 Kelvin. The galaxies are colored with a
+    scheme similar to the images captured in the Sloan Digital Sky Survey.
+    You really have to zoom-in very deep to see the galaxies, because the sky is
+    quite dark indeed.
+</p>
+<p>
+    The 100 largest clusters of galaxies are labelled (the Overlay). 
+    A circled dot represents the central galaxy(-s) of the cluster.
+    A star represents the bright galaxies in the cluster - only 10
+    brightest galaxies in a cluster are shown. The central galaxy is
+    usually also bright, thus two symbols overlap, ending up with a
+    turtle-like label for the central galaxies. (Who doesn't like turtles?)
+</p>
+<p>
+    Click on a label and zoom onto the galaxy. The properties of the
+    galaxy is shown in a pop up. <br/>
+    Have fun!
+</p>
+<div style='float:right; font-size:8pt;'>
+Authors: 
+Yu Feng (McWilliam
+Center for Cosmology)
+Christopher Bartley (Robotics Institute), 
+</div>
+</div>
+</div>
+</body>
+</html>

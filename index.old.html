@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Universe</title>
+   <style type="text/css">
+      body {
+         margin: 0;
+         padding: 0;
+         font-family: Verdana, Helvetica, Arial, sans-serif;
+      }
+
+      .overlayPanel {
+         display: none;
+         position: absolute;
+         border: 1px solid black;
+         padding: 3px;
+         background-color: rgba(255, 255, 255, .5);
+         color: black;
+         z-index: 1000;
+      }
+
+      #controlPanel {
+         top: 5px;
+         right: 5px;
+         width: auto;
+         height: auto;
+      }
+
+      #interestPointInfo {
+         top: 5px;
+         left: 5px;
+         width: 350px;
+         height: auto;
+      }
+
+      #gigapanViewer {
+         position: absolute;
+         top: 0;
+         bottom: 0;
+         left: 0;
+         right: 0;
+         margin: 0;
+         padding: 0;
+         background-color: black;
+      }
+
+      .interestPoint {
+         cursor: pointer;
+         width: 24px;
+         height: 24px;
+         background: url('images/interest_point.png') no-repeat;
+      }
+
+      .interestPointActive {
+         background: url('images/interest_point_active.png') no-repeat;
+      }
+
+      #interestPointTitle {
+         font-size: 16pt;
+         font-weight: bold;
+      }
+
+      #interestPointDescription {
+         font-size: 12pt;
+      }
+
+      #interestPointOverlayCloseButton {
+         font-weight: bold;
+         width: 15px;
+         height: 15px;
+         line-height: 15px;
+         text-align: center;
+         border: 1px solid black;
+         float: right;
+         cursor: pointer;
+      }
+   </style>
+   <script language="JavaScript" type="text/javascript" src="lib/jquery/jquery-1.10.2.min.js"></script>
+   <script language="JavaScript" type="text/javascript" src="lib/seadragon/seadragon-min.js"></script>
+   <script language="JavaScript" type="text/javascript" src="lib/org/gigapan/seadragon/GigapanTileSource.js"></script>
+   <script language="JavaScript" type="text/javascript" src="lib/org/gigapan/seadragon/SeadragonUtils.js"></script>
+   <script language="JavaScript" type="text/javascript">
+      var gigapans = [
+         {
+            id : 116511,
+            width : 214087,
+            height : 122474,
+            interestPoints : [
+               {
+                  "center" : {
+                     "x" : 0.6301437971946016,
+                     "y" : 0.16810916415915153
+                  },
+                  "bounds" : {
+                     "x" : 0.6290834805943409,
+                     "y" : 0.16742719841625262,
+                     "width" : 0.002094942710206597,
+                     "height" : 0.0018730702938524982
+                  },
+                  "content" : {
+                     "title" : "Tatoo 1",
+                     "description" : "This is one of the two stars of the Tatoo system.  Maybe the next simulation will include Tatooine."
+                  }
+               },
+               {
+                  "center" : {
+                     "x" : 0.44235949066231517,
+                     "y" : 0.22100792246473472
+                  },
+                  "bounds" : {
+                     "x" : 0.439566233715373,
+                     "y" : 0.219382415077551,
+                     "width" : 0.004189885420413196,
+                     "height" : 0.0037461405877049986
+                  },
+                  "content" : {
+                     "title" : "Traal",
+                     "description" : "The Ravenous Bugblatter Beast of Traal lives here.  Make sure you bring your <a href=\"http://hitchhikers.wikia.com/wiki/Ravenous_Bugblatter_Beast_of_Traal\" target=\"_blank\">towel.</a>"
+                  }
+               },
+               {
+                  "center" : {
+                     "x" : 0.2713808725323728,
+                     "y" : 0.4807026623699274
+                  },
+                  "bounds" : {
+                     "x" : 0.22312949927978593,
+                     "y" : 0.4553326709892693,
+                     "width" : 0.09954438034917633,
+                     "height" : 0.05544068961113848
+                  },
+                  "content" : {
+                     "title" : "Lonely Place",
+                     "description" : "Hellooooooo?  Is anyone there?"
+                  }
+               },
+               {
+                  "center" : {
+                     "x" : 0.8989616240168938,
+                     "y" : 0.4159295277709337
+                  },
+                  "bounds" : {
+                     "x" : 0.8971562831975073,
+                     "y" : 0.41505838659935396,
+                     "width" : 0.0033631187321042384,
+                     "height" : 0.0018730702938524993
+                  },
+                  "content" : {
+                     "title" : "Letter e Cluster",
+                     "description" : "This cluster looks like a lowercase letter e."
+                  }
+               }
+            ]
+         },
+         {
+            id : 116680,
+            width : 214087,
+            height : 122474,
+            interestPoints : [
+               {
+                  "center" : {
+                     "x" : 0.30849585557284137,
+                     "y" : 0.18854938272693503
+                  },
+                  "bounds" : {
+                     "x" : 0.3069357421610041,
+                     "y" : 0.18766656405975765,
+                     "width" : 0.0033631187321042384,
+                     "height" : 0.0018730702938524993
+                  },
+                  "content" : {
+                     "title" : "Guitar Pick Nebula",
+                     "description" : "To the right of this marker is the guitar pick nebula."
+                  }
+               },
+               {
+                  "center" : {
+                     "x" : 0.2713808725323728,
+                     "y" : 0.4807026623699274
+                  },
+                  "bounds" : {
+                     "x" : 0.22312949927978593,
+                     "y" : 0.4553326709892693,
+                     "width" : 0.09954438034917633,
+                     "height" : 0.05544068961113848
+                  },
+                  "content" : {
+                     "title" : "Lonely Place",
+                     "description" : "Hellooooooo?  Is anyone there?"
+                  }
+               },
+               {
+                  "center" : {
+                     "x" : 0.8989616240168938,
+                     "y" : 0.4159295277709337
+                  },
+                  "bounds" : {
+                     "x" : 0.8971562831975073,
+                     "y" : 0.41505838659935396,
+                     "width" : 0.0033631187321042384,
+                     "height" : 0.0018730702938524993
+                  },
+                  "content" : {
+                     "title" : "Letter e Cluster",
+                     "description" : "This cluster looks like a lowercase letter e."
+                  }
+               }
+            ]
+         }
+      ];
+
+      var gigapan;
+
+      var currentlySelectedGigapan = 0;
+      var currentlySelectedInterestPointId = null;
+
+      var viewer;
+      var currentBounds = null;
+
+      $(document).ready(function() {
+         $("#swapButton").click(function() {
+            if (viewer && viewer.viewport && viewer.isOpen()) {
+               // remember the current bounds
+               currentBounds = viewer.viewport.getBounds();
+
+               // do some housekeeping
+               deselectInterestPoint();
+               viewer.drawer.clearOverlays();
+               viewer.close();
+
+               // swap in the next gigapan
+               currentlySelectedGigapan++;
+               if (currentlySelectedGigapan > gigapans.length - 1) {
+                  currentlySelectedGigapan = 0;
+               }
+
+               loadGigapan();
+            }
+         });
+
+         $("#homeButton").click(function() {
+            if (viewer && viewer.viewport && viewer.isOpen()) {
+               deselectInterestPoint();
+               viewer.viewport.goHome();
+            }
+         });
+
+         $("#interestPointOverlayCloseButton").click(function() {
+            deselectInterestPoint();
+         });
+
+         loadGigapan();
+      });
+
+      function loadGigapan() {
+
+         var gigapan = gigapans[currentlySelectedGigapan];
+
+         console.log("Loading gigapan " + gigapan['id']);
+
+         // max number of concurrent image downloads
+         Seadragon.Config.imageLoaderLimit = 6;
+
+         Seadragon.Config.autoHideControls = false;
+         Seadragon.Config.debugMode = true;
+         Seadragon.Config.imagePath = "lib/seadragon/img/";
+
+         // create and initialize the viewer
+         viewer = new Seadragon.Viewer("gigapanViewer");
+         viewer.setDashboardEnabled(true);
+         viewer.addEventListener("open", handleViewerOpen);
+
+         // Override the normal Seadragon behavior so there's no zoom when the
+         // user clicks.  Instead, display info to make it easier for Yu to create interest points.
+
+         viewer.tracker.clickHandler = function(tracker, mousePosition, wasQuickClick, isShiftKeyPresses) {
+            var seadragonPosition = org.gigapan.seadragon.SeadragonUtils.convertPageCoordsToSeadragonCoords(mousePosition, viewer);
+            var bounds = viewer.viewport.getBounds();
+
+            var interestPoint = {
+               center : {
+                  x : seadragonPosition.x,
+                  y : seadragonPosition.y
+               },
+               bounds : {
+                  x : bounds.x,
+                  y : bounds.y,
+                  width : bounds.width,
+                  height : bounds.height
+               },
+               content : {
+                  title : "The title goes here",
+                  description : "The description goes here"
+               }
+            };
+
+            console.log(JSON.stringify(interestPoint, null, 3));
+         };
+
+
+         window.setTimeout(function() {
+            // compute the index of the tile server for this gigapan (note: this may change in the future, perhaps without warning!)
+            var tileServerIndex = '' + Math.floor(gigapan.id / 1000);
+            if (tileServerIndex.length < 2) {
+               tileServerIndex = '0' + tileServerIndex;
+            }
+
+            var urlPrefix = "http://tile" + tileServerIndex + ".gigapan.org/gigapans0/" + gigapan.id + "/tiles";
+
+            // create the tile source
+            var gigapanSource = new org.gigapan.seadragon.GigapanTileSource(
+                  urlPrefix,
+                  gigapan.width,
+                  gigapan.height
+            );
+
+            // tell the viewer to open the tile source
+            viewer.openTileSource(gigapanSource);
+         }, 1);
+      }
+
+      function handleViewerOpen() {
+         setViewerSize();
+
+         addOverlays();
+
+         if (currentBounds) {
+            viewer.viewport.fitBounds(currentBounds, true);
+         }
+
+         // show the swap button panel
+         $("#controlPanel").show();
+      }
+
+      function setViewerSize() {
+         $("#gigapanViewer").height($(window).height());
+      }
+
+      function addOverlays() {
+         var gigapan = gigapans[currentlySelectedGigapan];
+         if (gigapan['interestPoints']) {
+            $.each(gigapan['interestPoints'], function(index, overlay) {
+               var overlayElement = createInterestPointElement(index);
+               var center = new Seadragon.Point(overlay.center.x, overlay.center.y);
+               viewer.drawer.addOverlay(overlayElement.get(0), center, Seadragon.OverlayPlacement.CENTER);
+            });
+         }
+      }
+
+      function createInterestPointElement(id) {
+         var overlayElement = $('<div id="interestPoint' + id + '" class="interestPoint"></div>');
+         overlayElement
+               .mouseenter(function() {
+                              $(this).addClass("interestPointActive");
+                           })
+               .mouseleave(function() {
+                              if (id != currentlySelectedInterestPointId) {
+                                 $(this).removeClass("interestPointActive");
+                              }
+                           })
+               .click(function() {
+                         selectInterestPoint(id);
+                      })
+         return overlayElement;
+      }
+
+      function selectInterestPoint(id) {
+         if (id != currentlySelectedInterestPointId) {
+            deselectInterestPoint();
+         }
+         currentlySelectedInterestPointId = id;
+         displayInterestPointContent(id);
+         zoomTo(gigapans[currentlySelectedGigapan]['interestPoints'][id]['bounds']);
+      }
+
+      function displayInterestPointContent(id) {
+         var content = gigapans[currentlySelectedGigapan]['interestPoints'][id]['content'];
+         $("#interestPointTitle").html(content['title']);
+         $("#interestPointDescription").html(content['description']);
+         $("#interestPointInfo").show();
+      }
+
+      function deselectInterestPoint() {
+         $("#interestPointInfo").hide();
+         $("#interestPoint" + currentlySelectedInterestPointId).removeClass("interestPointActive");
+         currentlySelectedInterestPointId = null;
+      }
+
+      function zoomTo(bounds) {
+         viewer.viewport.fitBounds(new Seadragon.Rect(bounds.x, bounds.y, bounds.width, bounds.height));
+      }
+
+      $(window).resize(function() {
+         setViewerSize();
+      });
+
+   </script>
+</head>
+<body>
+<div id="interestPointInfo" class="overlayPanel">
+   <div id="interestPointOverlayCloseButton">X</div>
+   <div id="interestPointTitle"></div>
+   <div id="interestPointDescription"></div>
+</div>
+<div id="controlPanel" class="overlayPanel">
+   <button id="homeButton">Home</button>
+   <button id="swapButton">Swap</button>
+</div>
+<div id="gigapanViewer"></div>
+</body>
+</html>
