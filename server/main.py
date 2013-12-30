@@ -71,6 +71,7 @@ def makeselection(snap, f):
 @view('galaxy.json')
 def do_search(snapid):
     response.content_type = 'application/json'
+    response.headers['Access-Control-Allow-Origin'] = '*'
     f = request.params
     Nmax = numpy.int(f.get('Nmax'))
     Nmax = 10
