@@ -118,15 +118,16 @@
 
       var overlays = [
           {
-            source: "galaxies.json",
+            source:
+            "dosearch/068", 
 	    interestPoints: [],
             pointStyle: "BrightGalaxy",
-          },
-          {
-            source: "halos.json",
+          }
+/*        ,  {
+            source: "http://spellbound.phys.cmu.edu:8080/search/068",
 	    interestPoints: [],
             pointStyle: "SubHalo",
-          }
+          } */
       ];
       var currentlySelectedOverlay = null;
       var currentlySelectedInterestPointId = null;
@@ -147,6 +148,9 @@
                 $("#overlaySwitch").text("Overlay Off");
             }
          });
+        $("#submitButton").submit(function(event) {
+            event.preventDefault();
+        });
          $("#aboutButton").click(function() {
             displayAbout();
          });
@@ -252,7 +256,13 @@
          $.ajax({
                 dataType: "json",
                 url: jsonurl, 
-                mimeType: "application/json"})
+                mimeType: "application/json",
+                type: "get",
+                data: {ymin: "-inf", ymax:"inf",
+                       xmin: "-inf", xmax:"inf", 
+                       MassMin: "1e10",
+                        Nmax: '100'}
+                      })
         .done(
              function(data) {
                  overlays[gigapanid]["interestPoints"] = data;
@@ -263,7 +273,9 @@
          )
          .always(
              function(data, status, junk) {
-           console.log(jsonurl + "," + gigapanid + status);
+                console.log(jsonurl + "," + gigapanid + status);
+                console.log(data.responseText);
+                console.log(junk);
             }
           );
            console.log(jsonurl + "," + gigapanid);
@@ -286,6 +298,7 @@
             $.each(overlay['interestPoints'], function(index, over) {
                var overlayElement = createInterestPointElement(i, index);
                var center = new Seadragon.Point(over.center.x, over.center.y);
+               console.log("point: " + over.center.x + ", " + over.center.y);
                viewer.drawer.addOverlay(overlayElement.get(0), center, Seadragon.OverlayPlacement.CENTER);
             });
          }
@@ -364,6 +377,23 @@
    <button id="overlaySwitch">Overlay Off</button>
 </div>
 <div id="gigapanViewer"></div>
+<div id="search" class="overlayPanel">
+   <div id="SearchOverlayCloseButton">X</div>
+   <div id="SearchTitle"> Search </div>
+   <div id="SearchBox">
+    <form method="post">
+        <input value="100" name="Nmax", type="text"/>
+        <input value="1e10" name="MassMin", type="text"/>
+        <input value="-inf" name="xmin", type="text"/>
+        <input value="inf" name="xmax", type="text"/>
+        <input value="-inf" name="ymin", type="text"/>
+        <input value="inf" name="ymax", type="text"/>
+        <input value="068" type="hidden"/>
+        <input value="Search" name="submitButton" type="submit"/>
+    </form>
+</div>
+    
+</div>
 <div id="about" style="display:none">
 <div style="font-size:10pt;">
 <p>
@@ -401,7 +431,6 @@
 Authors: 
 Yu Feng (McWilliam
 Center for Cosmology)
-Christopher Bartley (Robotics Institute), 
 </div>
 </div>
 </div>

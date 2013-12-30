@@ -1,0 +1,19 @@
+<html>
+<body>
+<ul>
+% for gid, group in groups:
+    <li>
+        Group: {{gid}} 
+    <ul>
+    <li>Mass: {{group['mass'] }} </li> 
+    <li>X: {{group['pos'][0] }} </li>
+    <li>Y: {{group['pos'][1] }} </li>
+    <li>Z: {{group['pos'][2] }} </li>
+    </ul>
+    </li>
+% else:
+    <li>No groups</li>
+% end
+</ul>
+</body>
+</html>

@@ -1,0 +1,23 @@
+[
+% for i in range(len(x)):
+{
+  "center" : {
+     "x" : {{'%.13f' % x[i]}},
+     "y" : {{'%.13f' % y[i]}}
+  },
+  "bounds" : {
+     "x" : {{'%.13f' % (x[i] - w[i])}},
+     "y" : {{'%.13f' % (y[i] - h[i])}},
+     "width" : {{'%.13f' % (2 * w[i])}},
+     "height" : {{'%.13f' % (2 * h[i])}}
+  },
+  "content" : {
+     "title" : "Galaxy {{"%05d" % i }}",
+     "description" : "{{"Mass %g" % (mass[i],)}}"
+  }
+}
+% if i != len(x) - 1:
+  ,
+% end
+%end
+]
